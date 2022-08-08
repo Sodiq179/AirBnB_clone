@@ -23,9 +23,8 @@ git clone https://github.com/Sodiq179/AirBnB_clone.git
 ```
 
 #### Execution
-```
 Your shell should work like this in interactive mode:
-``` 
+
 cd AirBnB_clone
 
 $ ./console.py
@@ -39,9 +38,7 @@ EOF  help  quit
 (hbnb) 
 (hbnb) quit
 $
-```
 But also in non-interactive mode: 
-```
 $ echo "help" | ./console.py
 (hbnb)
 
