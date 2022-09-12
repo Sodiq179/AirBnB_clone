@@ -1,65 +1,172 @@
 #!/usr/bin/python3
-
+"""
+Unittest for console command interpreter
+"""
 import unittest
-import os
+from unittest.mock import patch
+from io import StringIO
 import pep8
-from models.user import User
+import os
+import json
+import console
+import tests
 from models.base_model import BaseModel
+from models.user import User
+from models.state import State
+from models.city import City
+from models.amenity import Amenity
+from models.place import Place
+from models.review import Review
+from models.engine.file_storage import FileStorage
 
 
-class TestUser(unittest.TestCase):
+class TestConsole(unittest.TestCase):
+
+    """Unittest for command interpreter"""
+    @classmethod
+    def setUpClass(self):
+        """Set up test"""
+        self.typing = console.HBNBCommand()
 
     @classmethod
-    def setUpClass(cls):
-        cls.my_user = User()
-        cls.my_user.first_name = "Betty"
-        cls.my_user.last_name = "Holberton"
-        cls.my_user.email = "airbnb@holbertonshool.com"
-        cls.my_user.password = "root"
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.my_user
+    def tearDownClass(self):
+        """Remove temporary file (file.json) created as a result"""
         try:
             os.remove("file.json")
-        except FileNotFoundError:
+        except:
             pass
 
-    def test_style_check(self):
-        """
-        Tests pep8 style
-        """
-        style = pep8.StyleGuide(quiet=True)
-        p = style.check_files(['models/user.py'])
-        self.assertEqual(p.total_errors, 0, "fix pep8")
+    """Check for Pep8 style conformance"""
+    def test_pep8_console(self):
+        """Pep8 console.py"""
+        style = pep8.StyleGuide(quiet=False)
+        errors = 0
+        file = (["console.py"])
+        errors += style.check_files(file).total_errors
+        self.assertEqual(errors, 0, 'Need to fix Pep8')
 
-    def test_is_subclass(self):
-        self.assertTrue(issubclass(self.my_user.__class__, BaseModel), True)
+    def test_pep8_test_console(self):
+        """Pep8 test_console.py"""
+        style = pep8.StyleGuide(quiet=False)
+        errors = 0
+        file = (["tests/test_console.py"])
+        errors += style.check_files(file).total_errors
+        self.assertEqual(errors, 0, 'Need to fix Pep8')
 
-    def test_checking_for_functions(self):
-        self.assertIsNotNone(User.__doc__)
+    """Check for docstring existance"""
+    def test_docstrings_in_console(self):
+        """Test docstrings exist in console.py"""
+        self.assertTrue(len(console.__doc__) >= 1)
 
-    def test_has_attributes(self):
-        self.assertTrue('email' in self.my_user.__dict__)
-        self.assertTrue('id' in self.my_user.__dict__)
-        self.assertTrue('created_at' in self.my_user.__dict__)
-        self.assertTrue('updated_at' in self.my_user.__dict__)
-        self.assertTrue('password' in self.my_user.__dict__)
-        self.assertTrue('first_name' in self.my_user.__dict__)
-        self.assertTrue('last_name' in self.my_user.__dict__)
+    def test_docstrings_in_test_console(self):
+        """Test docstrings exist in test_console.py"""
+        self.assertTrue(len(self.__doc__) >= 1)
 
-    def test_attributes_are_strings(self):
-        self.assertEqual(type(self.my_user.email), str)
-        self.assertEqual(type(self.my_user.password), str)
-        self.assertEqual(type(self.my_user.first_name), str)
-        self.assertEqual(type(self.my_user.first_name), str)
+    """Test command interpreter outputs"""
+    def test_emptyline(self):
+        """Test no user input"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("\n")
+            self.assertEqual(fake_output.getvalue(), '')
 
-    def test_save(self):
-        self.my_user.save()
-        self.assertNotEqual(self.my_user.created_at, self.my_user.updated_at)
+    def test_create(self):
+        """Test cmd output: create"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("create")
+            self.assertEqual("** class name missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("create SomeClass")
+            self.assertEqual("** class doesn't exist **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("create User")  # not used
+            self.typing.onecmd("create User")  # just need to create instances
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("User.all()")
+            self.assertEqual("[[User]",
+                             fake_output.getvalue()[:7])
 
-    def test_to_dict(self):
-        self.assertEqual('to_dict' in dir(self.my_user), True)
+    def test_all(self):
+        """Test cmd output: all"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("all NonExistantModel")
+            self.assertEqual("** class doesn't exist **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("all Place")
+            self.assertEqual("[]\n", fake_output.getvalue())
+
+    def test_destroy(self):
+        """Test cmd output: destroy"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("destroy")
+            self.assertEqual("** class name missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("destroy TheWorld")
+            self.assertEqual("** class doesn't exist **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("destroy User")
+            self.assertEqual("** instance id missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("destroy BaseModel 12345")
+            self.assertEqual("** no instance found **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("City.destroy('123')")
+            self.assertEqual("** no instance found **\n",
+                             fake_output.getvalue())
+
+    def test_update(self):
+        """Test cmd output: update"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("update")
+            self.assertEqual("** class name missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("update You")
+            self.assertEqual("** class doesn't exist **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("update User")
+            self.assertEqual("** instance id missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("update User 12345")
+            self.assertEqual("** no instance found **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("update User 12345")
+            self.assertEqual("** no instance found **\n",
+                             fake_output.getvalue())
+
+    def test_show(self):
+        """Test cmd output: show"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("show")
+            self.assertEqual("** class name missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("SomeClass.show()")
+            self.assertEqual("** class doesn't exist **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("show Review")
+            self.assertEqual("** instance id missing **\n",
+                             fake_output.getvalue())
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("User.show('123')")
+            self.assertEqual("** no instance found **\n",
+                             fake_output.getvalue())
+
+    def test_class_cmd(self):
+        """Test cmd output: <class>.<cmd>"""
+        with patch('sys.stdout', new=StringIO()) as fake_output:
+            self.typing.onecmd("User.count()")
+            self.assertEqual(int, type(eval(fake_output.getvalue())))
 
 
 if __name__ == "__main__":
