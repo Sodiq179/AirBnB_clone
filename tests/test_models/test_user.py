@@ -1,44 +1,66 @@
 #!/usr/bin/python3
-"""
-Unittest for user.py
-"""
+
 import unittest
+import os
+import pep8
 from models.user import User
-import datetime
+from models.base_model import BaseModel
 
 
-class UserCase(unittest.TestCase):
-    """Tests instances and methods from user class"""
+class TestUser(unittest.TestCase):
 
-    u = User()
+    @classmethod
+    def setUpClass(cls):
+        cls.my_user = User()
+        cls.my_user.first_name = "Betty"
+        cls.my_user.last_name = "Holberton"
+        cls.my_user.email = "airbnb@holbertonshool.com"
+        cls.my_user.password = "root"
 
-    def test_class_exists(self):
-        """tests if class exists"""
-        self.assertEqual(str(type(self.u)), "<class 'models.user.User'>")
+    @classmethod
+    def tearDownClass(cls):
+        del cls.my_user
+        try:
+            os.remove("file.json")
+        except FileNotFoundError:
+            pass
 
-    def test_user_inheritance(self):
-        """test if User is a subclass of BaseModel"""
-        self.assertIsInstance(self.u, User)
+    def test_style_check(self):
+        """
+        Tests pep8 style
+        """
+        style = pep8.StyleGuide(quiet=True)
+        p = style.check_files(['models/user.py'])
+        self.assertEqual(p.total_errors, 0, "fix pep8")
 
-    def testHasAttributes(self):
-        """verify if attributes exist"""
-        self.assertTrue(hasattr(self.u, 'email'))
-        self.assertTrue(hasattr(self.u, 'password'))
-        self.assertTrue(hasattr(self.u, 'first_name'))
-        self.assertTrue(hasattr(self.u, 'last_name'))
-        self.assertTrue(hasattr(self.u, 'id'))
-        self.assertTrue(hasattr(self.u, 'created_at'))
-        self.assertTrue(hasattr(self.u, 'updated_at'))
+    def test_is_subclass(self):
+        self.assertTrue(issubclass(self.my_user.__class__, BaseModel), True)
 
-    def test_types(self):
-        """tests if the type of the attribute is the correct one"""
-        self.assertIsInstance(self.u.first_name, str)
-        self.assertIsInstance(self.u.last_name, str)
-        self.assertIsInstance(self.u.email, str)
-        self.assertIsInstance(self.u.password, str)
-        self.assertIsInstance(self.u.id, str)
-        self.assertIsInstance(self.u.created_at, datetime.datetime)
-        self.assertIsInstance(self.u.updated_at, datetime.datetime)
+    def test_checking_for_functions(self):
+        self.assertIsNotNone(User.__doc__)
 
-if __name__ == '__main__':
+    def test_has_attributes(self):
+        self.assertTrue('email' in self.my_user.__dict__)
+        self.assertTrue('id' in self.my_user.__dict__)
+        self.assertTrue('created_at' in self.my_user.__dict__)
+        self.assertTrue('updated_at' in self.my_user.__dict__)
+        self.assertTrue('password' in self.my_user.__dict__)
+        self.assertTrue('first_name' in self.my_user.__dict__)
+        self.assertTrue('last_name' in self.my_user.__dict__)
+
+    def test_attributes_are_strings(self):
+        self.assertEqual(type(self.my_user.email), str)
+        self.assertEqual(type(self.my_user.password), str)
+        self.assertEqual(type(self.my_user.first_name), str)
+        self.assertEqual(type(self.my_user.first_name), str)
+
+    def test_save(self):
+        self.my_user.save()
+        self.assertNotEqual(self.my_user.created_at, self.my_user.updated_at)
+
+    def test_to_dict(self):
+        self.assertEqual('to_dict' in dir(self.my_user), True)
+
+
+if __name__ == "__main__":
     unittest.main()
