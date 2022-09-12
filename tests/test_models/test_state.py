@@ -1,39 +1,57 @@
 #!/usr/bin/python3
-"""
-Unittest for amenity.py
-"""
+
 import unittest
+import os
+import pep8
 from models.state import State
-import datetime
+from models.base_model import BaseModel
 
 
 class TestState(unittest.TestCase):
-    """ Tests instances and methods from State class """
 
-    s = State()
+    @classmethod
+    def setUpClass(cls):
+        cls.state1 = State()
+        cls.state1.name = "North_Carolina_AKA_THE_BEST_STATE"
 
-    def test_class_exists(self):
-        """tests if class exists"""
-        res = "<class 'models.state.State'>"
-        self.assertEqual(str(type(self.s)), res)
+    @classmethod
+    def tearDownClass(cls):
+        del cls.state1
+        try:
+            os.remove("file.json")
+        except FileNotFoundError:
+            pass
 
-    def test_user_inheritance(self):
-        """test if State is a subclass of BaseModel"""
-        self.assertIsInstance(self.s, State)
+    def test_style_check(self):
+        """
+        Tests pep8 style
+        """
+        style = pep8.StyleGuide(quiet=True)
+        p = style.check_files(['models/state.py'])
+        self.assertEqual(p.total_errors, 0, "fix pep8")
 
-    def testHasAttributes(self):
-        """verify if attributes exist"""
-        self.assertTrue(hasattr(self.s, 'name'))
-        self.assertTrue(hasattr(self.s, 'id'))
-        self.assertTrue(hasattr(self.s, 'created_at'))
-        self.assertTrue(hasattr(self.s, 'updated_at'))
+    def test_is_subclass(self):
+        self.assertTrue(issubclass(self.state1.__class__, BaseModel), True)
 
-    def test_types(self):
-        """tests if the type of the attribute is the correct one"""
-        self.assertIsInstance(self.s.name, str)
-        self.assertIsInstance(self.s.id, str)
-        self.assertIsInstance(self.s.created_at, datetime.datetime)
-        self.assertIsInstance(self.s.updated_at, datetime.datetime)
+    def test_checking_for_functions(self):
+        self.assertIsNotNone(State.__doc__)
 
-if __name__ == '__main__':
+    def test_has_attributes(self):
+        self.assertTrue('id' in self.state1.__dict__)
+        self.assertTrue('created_at' in self.state1.__dict__)
+        self.assertTrue('updated_at' in self.state1.__dict__)
+        self.assertTrue('name' in self.state1.__dict__)
+
+    def test_attributes_are_strings(self):
+        self.assertEqual(type(self.state1.name), str)
+
+    def test_save(self):
+        self.state1.save()
+        self.assertNotEqual(self.state1.created_at, self.state1.updated_at)
+
+    def test_to_dict(self):
+        self.assertEqual('to_dict' in dir(self.state1), True)
+
+
+if __name__ == "__main__":
     unittest.main()
