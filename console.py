@@ -33,6 +33,7 @@ class HBNBCommand(cmd.Cmd):
     def emptyline(self):
         """Overwrite default behavior to repeat last cmd"""
         pass
+    
 
     def do_create(self, line):
         """Create instance specified by user"""
